@@ -27,7 +27,7 @@ inline fun drawWithShader(
     body: () -> Unit,
 ) {
     val state = RenderType.entityTranslucent(TextureManager.INTENTIONAL_MISSING_TEXTURE)
-    val shader = SHADER
+    val shader = if (RenderSystem.getShader() == ModShaders.GLTF_INSTANCED) ModShaders.GLTF_INSTANCED else SHADER
     val accessor = shader as ShaderInstanceAccessor
 
     state.setupRenderState()

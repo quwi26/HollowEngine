@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import net.minecraft.client.Minecraft
+import net.minecraft.client.renderer.LightTexture
 import net.minecraft.client.renderer.entity.LivingEntityRenderer
 import net.minecraft.client.renderer.texture.OverlayTexture
 import net.minecraft.util.Mth
@@ -15,13 +16,16 @@ import org.joml.Quaternionf
 import ru.hollowhorizon.hollowengine.client.models.internal.AnimatedModel
 import ru.hollowhorizon.hollowengine.client.models.internal.animations.AnimationInstance
 import ru.hollowhorizon.hollowengine.client.models.internal.manager.HollowModelManager
-import ru.hollowhorizon.hollowengine.client.models.internal.rendering.ListRenderPipeline
+import ru.hollowhorizon.hollowengine.client.models.internal.rendering.InstancedRenderPipeline
 import ru.hollowhorizon.hollowengine.client.models.internal.rendering.RenderContext
 import ru.hollowhorizon.hollowengine.client.models.internal.rendering.RenderPipeline
 import ru.hollowhorizon.hollowengine.common.components.Component
 import ru.hollowhorizon.hollowengine.common.components.events.on
 import ru.hollowhorizon.hollowengine.common.coroutines.coroutineScope
+import ru.hollowhorizon.hollowengine.common.events.SubscribeEvent
 import ru.hollowhorizon.hollowengine.common.events.client.render.RenderEntityEvent
+import ru.hollowhorizon.hollowengine.common.events.client.render.RenderLevelStageEvent
+import ru.hollowhorizon.hollowengine.common.events.client.render.RenderStage
 import ru.hollowhorizon.hollowengine.common.utils.rl
 import ru.hollowhorizon.hollowengine.fabric.internal.IrisHelper
 
@@ -31,7 +35,7 @@ class ModelAttachment(val flow: StateFlow<AnimatedModel>, parent: Attachment?) :
 
     init {
         flow.onEach {
-            if(it.model.isBlockBench) transform.rotation.set(180f.deg, Vec3f.Y_AXIS)
+            if (it.model.isBlockBench) transform.rotation.set(180f.deg, Vec3f.Y_AXIS)
         }.launchIn(Minecraft.getInstance().coroutineScope)
     }
 
@@ -52,11 +56,9 @@ class ModelAttachment(val flow: StateFlow<AnimatedModel>, parent: Attachment?) :
     private val nodeIdToNode = nodes.flatMap { it.walk() }.associateBy { it.definition.index }
     private val nodeIdToTransform = nodeIdToNode.mapValues { it.value.transform }
 
-    @PublishedApi
-    internal val pipeline by lazy {
-        ListRenderPipeline().apply(::collectCommands)
+    init {
+        collectCommands(instancedRenderer)
     }
-
 
     fun onUpdate(action: ModelAttachment.() -> Unit) {
         onUpdates.add(action)
@@ -85,6 +87,23 @@ class ModelAttachment(val flow: StateFlow<AnimatedModel>, parent: Attachment?) :
     fun child(name: String) = nodes.single { it.name == name }
 }
 
+val instancedRenderer = InstancedRenderPipeline()
+
+@SubscribeEvent
+fun onRenderEntity(event: RenderLevelStageEvent) {
+    if (event.stage != RenderStage.AFTER_ENTITIES) return
+
+    event.poseStack.translate(-event.camera.position.x, -event.camera.position.y, -event.camera.position.z)
+    instancedRenderer.render(
+        RenderContext(
+            event.poseStack,
+            Minecraft.getInstance().renderBuffers().bufferSource(),
+            LightTexture.FULL_BRIGHT,
+            OverlayTexture.NO_OVERLAY
+        )
+    )
+}
+
 context(component: Component<LivingEntity>)
 fun ModelAttachment.bindRenderer() {
     component.on<RenderEntityEvent.Pre>().onlyOwner { it.entity }.listen { event ->
@@ -105,7 +124,7 @@ fun ModelAttachment.bindRenderer() {
                 overlay = LivingEntityRenderer.getOverlayCoords(entity, 0f)
             }
 
-            pipeline.render(RenderContext(poseStack, buffer, packedLight, overlay))
+            //pipeline.render(RenderContext(poseStack, buffer, packedLight, overlay))
             poseStack.popPose()
 
             isCanceled = true

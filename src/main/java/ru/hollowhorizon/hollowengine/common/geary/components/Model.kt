@@ -9,12 +9,10 @@ import net.minecraft.world.entity.LivingEntity
 import org.joml.Quaternionf
 import ru.hollowhorizon.hollowengine.api.Registerable
 import ru.hollowhorizon.hollowengine.api.Syncable
-import ru.hollowhorizon.hollowengine.client.models.internal.rendering.RenderContext
 import ru.hollowhorizon.hollowengine.client.models.internal.v2.ModelAttachment
 import ru.hollowhorizon.hollowengine.common.events.SubscribeEvent
 import ru.hollowhorizon.hollowengine.common.events.client.render.RenderEntityEvent
 import ru.hollowhorizon.hollowengine.common.geary.api.entity
-import ru.hollowhorizon.hollowengine.generated.Assets
 
 @Registerable
 @Syncable
@@ -28,11 +26,7 @@ data class Model(
     val scale: Float = 1f,
 ) {
     val attachment by lazy {
-        try {
-            ModelAttachment(model)
-        } catch (e: Exception) {
-            ModelAttachment(Assets.Hollowengine.Models.ERROR.toString())
-        }
+        ModelAttachment(model)
     }
 }
 
@@ -41,7 +35,9 @@ fun onRender(event: RenderEntityEvent.Pre) {
     val fleks = event.entity.entity
 
     val model = fleks.get<Model>() ?: return
+    model.attachment.transform.translation.set(event.entity.x.toFloat(), event.entity.y.toFloat(), event.entity.z.toFloat())
 
+    return
     with(event) {
         poseStack.pushPose()
 
@@ -59,7 +55,7 @@ fun onRender(event: RenderEntityEvent.Pre) {
             overlay = LivingEntityRenderer.getOverlayCoords(entity, 0f)
         }
 
-        model.attachment.pipeline.render(RenderContext(poseStack, buffer, packedLight, overlay))
+        //model.attachment.pipeline.render(RenderContext(poseStack, buffer, packedLight, overlay))
         poseStack.popPose()
 
         isCanceled = true

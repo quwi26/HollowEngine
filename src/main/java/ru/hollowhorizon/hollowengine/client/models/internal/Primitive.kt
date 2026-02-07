@@ -1,10 +1,7 @@
 package ru.hollowhorizon.hollowengine.client.models.internal
 
 import de.fabmax.kool.math.*
-import ru.hollowhorizon.hollowengine.client.models.internal.rendering.BatchingRenderer
-import ru.hollowhorizon.hollowengine.client.models.internal.rendering.MeshRenderer
-import ru.hollowhorizon.hollowengine.client.models.internal.rendering.PipelineRenderer
-import ru.hollowhorizon.hollowengine.client.models.internal.rendering.RenderPipeline
+import ru.hollowhorizon.hollowengine.client.models.internal.rendering.*
 import ru.hollowhorizon.hollowengine.client.models.internal.utils.GeometryUtils
 import kotlin.math.max
 import kotlin.math.min
@@ -26,7 +23,8 @@ class Primitive(
     val positionsCount: Int get() = (positions?.size ?: 0) * 3
     var jointCount = 0
 
-    val useBatching = positionsCount < 512 && !hasSkinning && morphTargets.isEmpty()
+    var useInstancing = true
+    val useBatching = positionsCount < 512 && !hasSkinning && morphTargets.isEmpty() && !useInstancing
 
     val localBounds: Pair<Vec3f, Vec3f>? by lazy { computeBounds() }
 
@@ -47,10 +45,10 @@ class Primitive(
             }
         }
 
-        renderer = if (useBatching) {
-            BatchingRenderer(this)
-        } else {
-            PipelineRenderer(this)
+        renderer = when {
+            useInstancing -> InstancedRenderer(this)
+            useBatching -> BatchingRenderer(this)
+            else -> PipelineRenderer(this)
         }
 
         renderer?.init()

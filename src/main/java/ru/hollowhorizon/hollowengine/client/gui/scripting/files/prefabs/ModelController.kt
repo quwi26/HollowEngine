@@ -9,8 +9,6 @@ import de.fabmax.kool.util.Color
 import de.fabmax.kool.util.MsdfFont
 import de.fabmax.kool.util.Time
 import net.minecraft.client.Minecraft
-import net.minecraft.client.renderer.LightTexture
-import net.minecraft.client.renderer.texture.OverlayTexture
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.util.Mth
 import org.joml.Matrix4f
@@ -29,7 +27,6 @@ import ru.hollowhorizon.hollowengine.client.kool.minecraft.Image
 import ru.hollowhorizon.hollowengine.client.models.internal.animations.AnimationInstance
 import ru.hollowhorizon.hollowengine.client.models.internal.controller.WrapMode
 import ru.hollowhorizon.hollowengine.client.models.internal.manager.HollowModelManager
-import ru.hollowhorizon.hollowengine.client.models.internal.rendering.RenderContext
 import ru.hollowhorizon.hollowengine.client.models.internal.v2.ModelAttachment
 import ru.hollowhorizon.hollowengine.client.models.internal.v2.walk
 import ru.hollowhorizon.hollowengine.client.render.OpenGLUtils
@@ -489,12 +486,12 @@ inline fun UiScope.Model(
         }
 
         val bufferSource = Minecraft.getInstance().renderBuffers().bufferSource()
-        attachment.pipeline.render(
-            RenderContext(
-                stack, bufferSource,
-                LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY
-            )
-        )
+//        attachment.pipeline.render(
+//            RenderContext(
+//                stack, bufferSource,
+//                LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY
+//            )
+//        )
         bufferSource.endBatch()
 
         if (modelConfig.showWireframe) {
